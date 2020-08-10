@@ -41,7 +41,7 @@ If you're interested in the mathematics behind the calculation, then have a look
   function refresh() {
 
     var configData      = getConfigData();
-    var shotsData       = getShotsData();
+    var shotsData       = getShotsData(configData);
     var infoGraphicSpec = calcInfoGraphicSpec(configData, shotsData);
      
     redrawInfoGraphic(configData, infoGraphicSpec);
@@ -70,10 +70,10 @@ If you're interested in the mathematics behind the calculation, then have a look
   ///////////////////////////////////////////////////////////////////////
   function getShotsData(configData) {
 
-    var  onTarA = text2Num(document.getElementById("OnTarA", configData).value);
-    var  onTarB = text2Num(document.getElementById("OnTarB", configData).value);
-    var  missA  = text2Num(document.getElementById("MissA",  configData).value);
-    var  missB  = text2Num(document.getElementById("MissB",  configData).value);
+    var  onTarA = text2Num(document.getElementById("OnTarA").value, configData);
+    var  onTarB = text2Num(document.getElementById("OnTarB").value, configData);
+    var  missA  = text2Num(document.getElementById("MissA").value,  configData);
+    var  missB  = text2Num(document.getElementById("MissB").value,  configData);
 
     var shotsData = {targetA : onTarA, 
                      targetB : onTarB, 

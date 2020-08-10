@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+  <!--   Author: Philip Kinlen, Aug 2020   -->
+  <body>
+  <h1>Goal Attempts Infographic</h1>
+<p>
+A football game has come to and end and we have the data on the number of shots taken by each team that 
+were on target and the number that were misses. If we want to present that in a nice graphic, 
+we could display it like a goal, with the area in the goal representing the number of shots on target 
+and the area outside to represent the misses. The graphic is divided into a left and right section, 
+one for each team. The javascrit used to generate this page does the calculation to work out dimensions of the sections in the info graphic.
+If you're interested in the mathematics behind the calculation, then have a look at 
+<a href="http://abitofmaths.blogspot.com/2020/08/graphics-for-on-target-and-misses.html">this blog post.</a>
+</p>
+<br />
+
+<canvas id="myCanvas"></canvas>
+
+
+  <table>
+    <tbody><tr>  <td>         </td>    <td>Team A</td>     <td> Team B</td>   </tr>
+      
+      <tr>  <td>Misses</td>
+            <td align="right"><input align="right" id="MissA" name="MissA" onchange="refresh()" type="text" value="13" style="width:8em" /></td>
+        
+            <td align="right"><input align="right" id="MissB" name="MissB" onchange="refresh()" type="text" value="5"  style="width:8em"/></td>
+      </tr>
+
+      <tr>  <td>On Target</td>
+            <td align="right"><input align="right" id="OnTarA" name="OnTarA" onchange="refresh()" type="text" value="7" style="width:8em"/></td>
+        
+            <td align="right"><input align="right" id="OnTarB" name="OnTarB" onchange="refresh()" type="text" value="4" style="width:8em"/></td>
+      </tr>    
+    </tbody>
+  </table>      
+
+
+<script> 
+  ///////////////////////////////////////////////////////////////////////
+  // Author: Philip Kinlen, Aug 2020
+  function refresh() {
+
+    var configData      = getConfigData();
+    var shotsData       = getShotsData();
+    var infoGraphicSpec = calcInfoGraphicSpec(configData, shotsData);
+     
+    redrawInfoGraphic(configData, infoGraphicSpec);
+  }
+  ///////////////////////////////////////////////////////////////////////
+  function getConfigData(){
+
+    var configData =  { 
+                         fullWidth    : 400, 
+                         fullHeight   : 200,
+                         goalBoarder  : 4,
+
+                         canvasID     : "myCanvas",
+
+                         aOnTargetRGB : "rgb(220,90,90)",     // light red
+                         bOnTargetRGB : "rgb(90,90,220)",     // light blue
+                         aMissesRGB   : "rgb(180,60,60)",     // darker red
+                         bMissesRGB   : "rgb(60,60,180)",     // darker blue
+                         goalPostRGB  : "rgb(255,255, 255)",  // white
+
+                         epsilon      : 1e-8   // a small number used to help avoid division by zero errors
+                      };
+
+    return configData;
+  }
+  ///////////////////////////////////////////////////////////////////////
+  function getShotsData(configData) {
+
+    var  onTarA = text2Num(document.getElementById("OnTarA", configData).value);
+    var  onTarB = text2Num(document.getElementById("OnTarB", configData).value);
+    var  missA  = text2Num(document.getElementById("MissA",  configData).value);
+    var  missB  = text2Num(document.getElementById("MissB",  configData).value);
+
+    var shotsData = {targetA : onTarA, 
+                     targetB : onTarB, 
+                     missesA : missA, 
+                     missesB : missB};
+
+    return shotsData;     
+  }
+  ///////////////////////////////////////////////////////////////////////
+  // An explanation for the maths used in the function immediately below can be found at the following link:
+  // http://abitofmaths.blogspot.com/2020/08/graphics-for-on-target-and-misses.html
+  function calcInfoGraphicSpec(configData, shotsData){
+      
+      var shotsA = shotsData.targetA + shotsData.missesA;
+      var shotsB = shotsData.targetB + shotsData.missesB;       
+    
+      console.log("shotsA: " + shotsA + ", shotsB: " + shotsB);
+
+      var infoGraphicSpec = {divider: 0, crossBar:0, leftPost:0, rightPost:0 };
+
+      var divider = configData.fullWidth * shotsA / (shotsA + shotsB);
+      infoGraphicSpec.divider = divider;
+    
+      var crossBar;
+      if ( (shotsData.targetA * shotsData.missesB) > (shotsData.targetB * shotsData.missesA ) )
+        crossBar = configData.fullHeight * Math.sqrt(shotsData.targetA / shotsA);
+      else
+        crossBar = configData.fullHeight * Math.sqrt(shotsData.targetB / shotsB);
+    
+      infoGraphicSpec.crossBar  = crossBar;
+
+      infoGraphicSpec.leftPost  = divider -  divider                          * shotsData.targetA * configData.fullHeight / ( shotsA * crossBar);
+      infoGraphicSpec.rightPost = divider +  (configData.fullWidth - divider) * shotsData.targetB * configData.fullHeight / ( shotsB * crossBar);
+
+      console.log("leftPost:  " + infoGraphicSpec.leftPost);
+      console.log("rightPost: " + infoGraphicSpec.rightPost);
+      console.log("crossBar:  " + crossBar);
+      console.log("divider:   " + divider);
+     
+      return infoGraphicSpec;
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  function redrawInfoGraphic(configData, infoGraphicSpec){
+
+      var canvas    = document.getElementById(configData.canvasID);
+      const context = canvas.getContext('2d');
+      context.clearRect(0, 0, configData.fullWidth, configData.fullHeight);
+      canvas.width  = configData.fullWidth;
+      canvas.height = configData.fullHeight;
+
+      // Misses for A      
+      context.fillStyle = configData.aMissesRGB;
+      context.fillRect (0, 0, infoGraphicSpec.divider, configData.fullHeight);
+
+      // Misses for B  
+      context.fillStyle = configData.bMissesRGB;
+      context.fillRect (infoGraphicSpec.divider, 0, configData.fullWidth, configData.fullWidth);
+
+      // Goal with boarder
+      context.fillStyle = configData.goalPostRGB;
+      context.fillRect( infoGraphicSpec.leftPost                             -     configData.goalBoarder, 
+                        configData.fullHeight     - infoGraphicSpec.crossBar -     configData.goalBoarder,
+                        infoGraphicSpec.rightPost - infoGraphicSpec.leftPost + 2 * configData.goalBoarder,
+                        infoGraphicSpec.crossBar                             + 2 * configData.goalBoarder );
+    
+      // A on target   
+      context.fillStyle = configData.aOnTargetRGB;
+      context.fillRect (infoGraphicSpec.leftPost, 
+                        configData.fullHeight - infoGraphicSpec.crossBar, 
+                        infoGraphicSpec.divider - infoGraphicSpec.leftPost, 
+                        infoGraphicSpec.crossBar);
+
+      // B on target   
+      context.fillStyle = configData.bOnTargetRGB;
+      context.fillRect (infoGraphicSpec.divider, 
+                        configData.fullHeight - infoGraphicSpec.crossBar,  
+                        infoGraphicSpec.rightPost - infoGraphicSpec.divider, 
+                        infoGraphicSpec.crossBar);
+            
+      console.log("redrawn");
+  
+    }  
+    /////////////////////////////////////////////////////////////////////////////
+    function text2Num(str, configData){
+          console.log("trying to convert str " + str + " to a number");
+          var ret = Number(str.replace(/\,/g,''));
+        
+          if (ret <= 0)   // to avoid division by zero errors
+             ret = configData.epsilon;
+        
+          return ret;        
+    } 
+    /////////////////////////////////////////////////////////////////////////////
+  
+  refresh();
+</script>
+
+</body>
+</html>
+
+
